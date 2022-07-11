@@ -1,35 +1,43 @@
 <script>
-import { v4 as uuidv4} from 'uuid';
+import axios from "axios";
 export default {
   data() {
     return {
-      times: [
-        { id: "8ae6623d-5462-4774-b5e1-e263c5d2d367", nome: "Paris-Saint-Germany" },
-        { id: "1f659d91-17b5-40da-b5fb-dbffa5664e27", nome: "Real Madrid" },
-        { id: "d5a59ada-da1d-47a2-9a6e-e99964df9571", nome: "Manchester-City" },
-        { id: "2311c938-42fa-4661-a3fc-9ba664a30f6e", nome: "Flamengo" },
-        { id: "6f58a76b-0ea0-4bca-8d93-296c7d69685c", nome: "Milan" },
-      ],
-      novo_time: "", 
+      times: [],
+      time: {}, 
     };
   },
+  async created() {
+    const times = await axios.get("http://localhost:4000/times");
+    this.times = times.data;
+  },
   methods: {
-    salvar() {
-      if (this.novo_time !== ""){
-      const novo_id = uuidv4();
-      this.times.push({
-        id: novo_id,
-        nome: this.novo_time,
-          });
-          this.novo_time = "";
-      };
+    async salvar() {
+      if (this.time.id) {
+        const time_alterado = await axios.put(
+          'http://localhost:4000/times/$(this.time.id)', 
+          this.time
+        );
+      } else {
+        const time_criado = await axios.post(
+          "http://localhost:4000/times/",
+          this.time
+        );
+        this.times.push(time_criado.data);
+      }
+      this.times.push(time_criado.data);
+      this.time = {};
     },
-        excluir(time) {
-          const indice = this.times.indexOf(time);
-          this.times.splice (indice, 1);
-        },
-      },
-    };
+    async excluir(time) {
+      await axios.delete('http://localhost:4000/times/$(time.id)');
+      const indice = this.times.index0f(time);
+      this.times.splice(indice, 1);
+    },
+    prepararEdicao(time) {
+      Object.assign (this.time, time); 
+    }
+  },
+}
 </script>
 
 <template>
@@ -38,7 +46,8 @@ export default {
       <h2>Gerenciamento de Times</h2>
     </div>
     <div class="form-input">
-      <input type="text" v-model="novo_time" />
+      <input type="text" placeholder="Nome do time" v-model="time.nome" />
+      <input type="text" placeholder="Cidade" v-model="time.cidade" />
       <button @click="salvar">Salvar</button>
     </div>
     <div class="list-times">
@@ -47,6 +56,7 @@ export default {
           <tr>
             <th>ID</th>
             <th>Nome</th>
+            <th>Cidade</th>
             <th>Ações</th>
           </tr>
         </thead>
@@ -54,8 +64,9 @@ export default {
           <tr v-for="times in times" :key="times.id">
             <td>{{ times.id }}</td>
             <td>{{ times.nome }}</td>
+            <td>{{ times.cidade }}</td>
             <td>
-              <button>Editar</button>
+              <button @click="prepararEdicao">Editar</button>
               <button @click="excluir(time)">Excluir</button>
             </td>
           </tr>
