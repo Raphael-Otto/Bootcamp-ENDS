@@ -1,45 +1,31 @@
 <script>
-import   {v4 as uuidv4} from 'uuid';
+import axios from "axios";
 export default {
   data() {
     return {
-      jogadores: [
-        {
-          id: "72b60663-4943-4f37-a782-3b0688d5b313",
-          nome: "Neymar Jr",
-          time: "Time 1",
-        },
-        {
-          id: "e91ca40f-1b1c-40d9-a589-a6d74b42f6c5",
-          nome: "Vinicius Jr",
-          time: "Time 2",
-        },
-        {
-          id: "d181a6a6-fa46-426e-bd5a-9a9ee19356d6",
-          nome: "Anthony",
-          time: "Time 3",
-        },
-        {
-          id: "e0b9c7d6-06d5-405f-a674-0e4b286a6b6a",
-          nome: "Lucas Paquetá",
-          time: "Time 4",
-        },
-        {
-          id: "0daa3bee-b872-4ca7-87ef-42481f434a9a",
-          nome: "Gabigol",
-          time: "Time 5",
-        },
-      ],
-      novo_jogador: "",
+      jogadores: [],
+      jogador: {},
+      times: [],
     };
   },
+  async created() {
+    await this.buscarTodosOsJogadores();
+    await this.buscarTodosOsTimes();
+  },
   methods: {
-    salvar() {
-      const novo_id = uuidv4();
-      this.jogadores.push({
-        id: novo_id,
-        nome: this.novo_jogador,
-      });
+    async buscarTodosOsTimes() {
+      const times = await axios.get("http://localhost:4000/times");
+      this.times = times.data;
+    },
+    async buscarTodosOsJogadores() {
+      const resposta = await axios.get(
+        "http://localhost:4000/jogadores?expand=time"
+      );
+      this.jogadores = resposta.data;
+    },
+    async salvar() {
+      await axios.post("http://localhost:4000/jogadores", this.jogador);
+      await this.buscarTodosOsJogadores();
     },
   },
 };
@@ -51,7 +37,12 @@ export default {
       <h2>Gerenciamento de Jogadores</h2>
     </div>
     <div class="form-input">
-      <input type="text" v-model="novo_jogador" />
+      <input type="text" v-model="jogador.nome" placeholder="Nome do Jogador" />
+      <select v-model="jogador.timeId">
+        <option v-for="time in times" :key="time.id" :value="time.id">
+          {{ time.nome }}
+        </option>
+      </select>
       <button @click="salvar">Salvar</button>
     </div>
     <div class="list-jogadores">
@@ -61,16 +52,77 @@ export default {
             <th>ID</th>
             <th>Nome</th>
             <th>Time</th>
+            <th>Ações</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="jogadores in jogadores" :key="jogadores.id">
-            <td>{{ jogadores.id }}</td>
-            <td>{{ jogadores.nome }}</td>
-            <td>{{ jogadores.time }}</td>
+          <tr v-for="jogador in jogadores" :key="jogador.id">
+            <td>{{ jogador.id }}</td>
+            <td>{{ jogador.nome }}</td>
+            <td>{{ jogador.time.nome }}</td>
+            <td>??</td>
           </tr>
         </tbody>
       </table>
     </div>
   </div>
 </template>
+
+<style>
+.title {
+  margin: 2rem auto;
+  display: flex;
+  justify-content: center;
+}
+.form-input {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.form-input input {
+  width: 60%;
+  height: 45px;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 0 10px;
+}
+
+.form-input button {
+  margin-left: 1%;
+  width: 15%;
+  height: 45px;
+  border: 1px solid rgb(36, 127, 65);
+  border-radius: 10px;
+  background-color: rgb(36, 127, 65);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.list-jogadores {
+  display: flex;
+  justify-content: center;
+}
+
+table {
+  width: 50%;
+  margin: 2% auto;
+  border-collapse: collapse;
+}
+
+table tr th {
+  border: 1px solid #ccc;
+  padding: 10px;
+  font-weight: bold;
+}
+
+table tr td {
+  border: 1px solid #ccc;
+  padding: 10px;
+}
+
+table tr:nth-child(odd) {
+  background-color: #ccc;
+}
+</style>
